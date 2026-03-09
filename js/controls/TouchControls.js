@@ -139,7 +139,7 @@ class TouchControls {
             if (!this.joystickActive) {
                 this.joystickActive = true;
                 this.joystickPointerId = pointer.id;
-                this.updateJoystick(pointer.x);
+                this.updateJoystick(pointer.x, pointer.y);
             }
         });
 
@@ -148,7 +148,7 @@ class TouchControls {
         // Global pointer move/up for joystick tracking
         this.scene.input.on('pointermove', (pointer) => {
             if (this.joystickActive && pointer.id === this.joystickPointerId) {
-                this.updateJoystick(pointer.x);
+                this.updateJoystick(pointer.x, pointer.y);
             }
         });
 
@@ -210,28 +210,43 @@ class TouchControls {
         this.joystickThumb.strokeCircle(x, y, radius);
     }
 
-    updateJoystick(pointerX) {
+    updateJoystick(pointerX, pointerY) {
         const dx = pointerX - this.joystickBaseX;
-        const clamped = Phaser.Math.Clamp(dx, -this.joystickRadius, this.joystickRadius);
-        const normalized = clamped / this.joystickRadius; // -1 to 1
+        const dy = pointerY - this.joystickBaseY;
+        const clampedX = Phaser.Math.Clamp(dx, -this.joystickRadius, this.joystickRadius);
+        const clampedY = Phaser.Math.Clamp(dy, -this.joystickRadius, this.joystickRadius);
+        const normalizedX = clampedX / this.joystickRadius; // -1 to 1
+        const normalizedY = clampedY / this.joystickRadius; // -1 to 1
 
-        // Update thumb visual position
+        // Update thumb visual position (follows finger in both axes)
         const thumbRadius = this.joystickRadius * 0.45;
-        this.drawJoystickThumb(this.joystickBaseX + clamped, this.joystickBaseY, thumbRadius);
+        this.drawJoystickThumb(this.joystickBaseX + clampedX, this.joystickBaseY + clampedY, thumbRadius);
 
-        // Set analog + digital state
-        this.analogX = Math.abs(normalized);
+        // Horizontal: analog speed
+        this.analogX = Math.abs(normalizedX);
 
-        if (normalized < -0.15) {
+        if (normalizedX < -0.15) {
             this.left = true;
             this.right = false;
-        } else if (normalized > 0.15) {
+        } else if (normalizedX > 0.15) {
             this.right = true;
             this.left = false;
         } else {
             this.left = false;
             this.right = false;
             this.analogX = 0;
+        }
+
+        // Vertical: digital up/down (for ladder climbing)
+        if (normalizedY < -0.25) {
+            this.up = true;
+            this.down = false;
+        } else if (normalizedY > 0.25) {
+            this.down = true;
+            this.up = false;
+        } else {
+            this.up = false;
+            this.down = false;
         }
     }
 
@@ -240,6 +255,8 @@ class TouchControls {
         this.joystickPointerId = null;
         this.left = false;
         this.right = false;
+        this.up = false;
+        this.down = false;
         this.analogX = 0;
 
         // Reset thumb to center
