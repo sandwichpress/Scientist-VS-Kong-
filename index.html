@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="Scientist vs Kong - An 8-bit platformer released with the album">
+    <title>SCIENTIST vs KONG</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="loading-screen">
+        <div class="loading-content">
+            <h1 class="loading-title">SCIENTIST vs KONG</h1>
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+            <p class="loading-text">LOADING...</p>
+        </div>
+    </div>
+    <div id="game-container"></div>
+
+    <!-- Phaser 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+
+    <!-- Game Scripts -->
+    <script src="js/sprites/SpriteGenerator.js?v=5"></script>
+    <script src="js/audio/AudioManager.js?v=6"></script>
+    <script src="js/controls/TouchControls.js?v=2"></script>
+    <script src="js/systems/SaveManager.js?v=7"></script>
+    <script src="js/entities/Player.js?v=7"></script>
+    <script src="js/entities/MovingPlatform.js?v=2"></script>
+    <script src="js/entities/BarrelLauncher.js?v=2"></script>
+    <script src="js/entities/Checkpoint.js?v=2"></script>
+    <script src="js/entities/enemies/BadVibes.js?v=2"></script>
+    <script src="js/entities/enemies/Static.js?v=2"></script>
+    <script src="js/entities/enemies/FeedbackBoss.js?v=2"></script>
+    <script src="js/levels/LevelManager.js?v=5"></script>
+    <script src="js/ui/HUD.js?v=6"></script>
+    <script src="js/ui/PauseMenu.js?v=2"></script>
+    <script src="js/scenes/BootScene.js?v=2"></script>
+    <script src="js/scenes/PreloadScene.js?v=2"></script>
+    <script src="js/scenes/MenuScene.js?v=2"></script>
+    <script src="js/scenes/LevelSelectScene.js?v=5"></script>
+    <script src="js/scenes/WorldMapScene.js?v=5"></script>
+    <script src="js/scenes/StoryCutscene.js?v=5"></script>
+    <script src="js/scenes/GameScene.js?v=6"></script>
+    <script src="js/scenes/GameOverScene.js?v=5"></script>
+    <script src="js/game.js?v=2"></script>
+</body>
+
+</html>
