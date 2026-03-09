@@ -1,7 +1,7 @@
 /**
  * TouchControls.js - Mobile-first virtual controls
- * D-pad (left), action buttons (right), swipe gestures
- * Keyboard fallback for desktop
+ * Virtual joystick (left), action buttons (right), keyboard fallback
+ * Joystick: left/right only, analog speed (further = faster)
  */
 class TouchControls {
     constructor(scene) {
@@ -16,6 +16,9 @@ class TouchControls {
         this.jump = false;
         this.attack = false;
         this.special = false;
+
+        // Analog joystick (0 to 1)
+        this.analogX = 0;
 
         // Swipe
         this.swipeUp = false;
@@ -33,18 +36,22 @@ class TouchControls {
         this.lastJumpTime = 0;
         this.doubleJump = false;
 
-        // Touch tracking
-        this.activeTouches = {};
-
         // UI elements
-        this.dpad = null;
         this.buttons = [];
         this.uiElements = [];
+
+        // Joystick state
+        this.joystickActive = false;
+        this.joystickPointerId = null;
+        this.joystickBase = null;
+        this.joystickThumb = null;
+        this.joystickBaseX = 0;
+        this.joystickBaseY = 0;
+        this.joystickRadius = 50;
 
         // Settings
         this.opacity = 0.6;
         this.scale = 1.0;
-        this.oneHandedMode = false;
 
         // Keyboard (desktop)
         this.keys = null;
@@ -65,41 +72,98 @@ class TouchControls {
 
     createTouchControls(width, height) {
         const isLandscape = width > height;
-        const padding = isLandscape ? 15 : 20;
-        const scaleFactor = isLandscape ? Math.min(1, height / 400) : this.scale;
-        const dpadSize = Math.round(120 * scaleFactor);
-        const btnSize = Math.round(60 * scaleFactor);
 
-        // D-pad position (bottom-left)
-        const dpadX = padding + dpadSize / 2;
-        const dpadY = height - padding - dpadSize / 2;
+        // Joystick sizing
+        const joyRadius = isLandscape ? Math.round(height * 0.16) : 50;
+        const joyBaseSize = joyRadius * 2.4;
+        const joyThumbSize = joyRadius * 0.9;
+        this.joystickRadius = joyRadius;
 
-        // Create D-pad background
-        this.dpad = this.scene.add.image(dpadX, dpadY, 'ui_dpad')
+        // Button sizing - MUCH bigger in landscape
+        const btnSize = isLandscape ? Math.round(height * 0.22) : 60;
+        const padding = isLandscape ? 20 : 20;
+
+        // ========================
+        // VIRTUAL JOYSTICK (left side)
+        // ========================
+        const joyX = padding + joyBaseSize / 2;
+        const joyY = height - padding - joyBaseSize / 2;
+        this.joystickBaseX = joyX;
+        this.joystickBaseY = joyY;
+
+        // Base circle (outer ring)
+        this.joystickBase = this.scene.add.graphics()
             .setScrollFactor(0)
             .setDepth(1000)
-            .setAlpha(this.opacity)
-            .setDisplaySize(dpadSize, dpadSize)
+            .setAlpha(this.opacity);
+
+        // Draw base
+        this.joystickBase.lineStyle(3, 0xFFD700, 0.6); // gold border
+        this.joystickBase.fillStyle(0x000000, 0.3);
+        this.joystickBase.fillCircle(joyX, joyY, joyRadius * 1.2);
+        this.joystickBase.strokeCircle(joyX, joyY, joyRadius * 1.2);
+
+        // Draw left/right arrows on base
+        this.joystickBase.fillStyle(0xFFD700, 0.5);
+        // Left arrow ◀
+        this.joystickBase.fillTriangle(
+            joyX - joyRadius * 0.9, joyY,
+            joyX - joyRadius * 0.5, joyY - joyRadius * 0.3,
+            joyX - joyRadius * 0.5, joyY + joyRadius * 0.3
+        );
+        // Right arrow ▶
+        this.joystickBase.fillTriangle(
+            joyX + joyRadius * 0.9, joyY,
+            joyX + joyRadius * 0.5, joyY - joyRadius * 0.3,
+            joyX + joyRadius * 0.5, joyY + joyRadius * 0.3
+        );
+
+        this.uiElements.push(this.joystickBase);
+
+        // Thumb (draggable knob)
+        this.joystickThumb = this.scene.add.graphics()
+            .setScrollFactor(0)
+            .setDepth(1001);
+
+        this.drawJoystickThumb(joyX, joyY, joyThumbSize / 2);
+
+        this.uiElements.push(this.joystickThumb);
+
+        // Joystick touch zone (covers left half of screen)
+        const joyZone = this.scene.add.zone(width * 0.3, height / 2, width * 0.6, height)
+            .setScrollFactor(0)
+            .setDepth(999)
             .setInteractive();
 
-        this.uiElements.push(this.dpad);
+        joyZone.on('pointerdown', (pointer) => {
+            if (!this.joystickActive) {
+                this.joystickActive = true;
+                this.joystickPointerId = pointer.id;
+                this.updateJoystick(pointer.x);
+            }
+        });
 
-        // D-pad zones (invisible interactive areas)
-        const zoneSize = dpadSize / 3;
+        this.uiElements.push(joyZone);
 
-        // Up zone
-        this.createDPadZone(dpadX, dpadY - zoneSize, zoneSize, zoneSize, 'up');
-        // Down zone
-        this.createDPadZone(dpadX, dpadY + zoneSize, zoneSize, zoneSize, 'down');
-        // Left zone
-        this.createDPadZone(dpadX - zoneSize, dpadY, zoneSize, zoneSize, 'left');
-        // Right zone
-        this.createDPadZone(dpadX + zoneSize, dpadY, zoneSize, zoneSize, 'right');
+        // Global pointer move/up for joystick tracking
+        this.scene.input.on('pointermove', (pointer) => {
+            if (this.joystickActive && pointer.id === this.joystickPointerId) {
+                this.updateJoystick(pointer.x);
+            }
+        });
 
-        // Action buttons (bottom-right) - Diamond layout: Jump at bottom, Attack left, Special top
+        this.scene.input.on('pointerup', (pointer) => {
+            if (this.joystickActive && pointer.id === this.joystickPointerId) {
+                this.releaseJoystick();
+            }
+        });
+
+        // ========================
+        // ACTION BUTTONS (right side) - bigger in landscape
+        // ========================
         const btnBaseX = width - padding - btnSize / 2;
         const btnBaseY = height - padding - btnSize / 2;
-        const btnSpacing = btnSize + 8;
+        const btnSpacing = btnSize + (isLandscape ? 12 : 8);
 
         // Jump (A) - bottom-right (primary, most accessible)
         this.createActionButton(btnBaseX, btnBaseY, 'ui_btn_a', 'jump', btnSize);
@@ -108,11 +172,14 @@ class TouchControls {
         // Special/Bass (C) - above jump
         this.createActionButton(btnBaseX, btnBaseY - btnSpacing, 'ui_btn_c', 'special', btnSize);
 
-        // Swipe detection on the whole screen
+        // Swipe detection (for climbing etc)
         this.scene.input.on('pointerdown', (pointer) => {
-            this.swipeStartX = pointer.x;
-            this.swipeStartY = pointer.y;
-            this.swipeStartTime = Date.now();
+            // Only track swipes on non-joystick, non-button touches
+            if (pointer.x > width * 0.3 && pointer.x < width - padding - btnSize * 2) {
+                this.swipeStartX = pointer.x;
+                this.swipeStartY = pointer.y;
+                this.swipeStartTime = Date.now();
+            }
         });
 
         this.scene.input.on('pointerup', (pointer) => {
@@ -135,25 +202,49 @@ class TouchControls {
         });
     }
 
-    createDPadZone(x, y, w, h, direction) {
-        const zone = this.scene.add.zone(x, y, w, h)
-            .setScrollFactor(0)
-            .setDepth(1001)
-            .setInteractive();
+    drawJoystickThumb(x, y, radius) {
+        this.joystickThumb.clear();
+        this.joystickThumb.fillStyle(0xFFD700, 0.8);
+        this.joystickThumb.fillCircle(x, y, radius);
+        this.joystickThumb.lineStyle(2, 0xFFFFFF, 0.6);
+        this.joystickThumb.strokeCircle(x, y, radius);
+    }
 
-        zone.on('pointerdown', () => {
-            this[direction] = true;
-        });
+    updateJoystick(pointerX) {
+        const dx = pointerX - this.joystickBaseX;
+        const clamped = Phaser.Math.Clamp(dx, -this.joystickRadius, this.joystickRadius);
+        const normalized = clamped / this.joystickRadius; // -1 to 1
 
-        zone.on('pointerup', () => {
-            this[direction] = false;
-        });
+        // Update thumb visual position
+        const thumbRadius = this.joystickRadius * 0.45;
+        this.drawJoystickThumb(this.joystickBaseX + clamped, this.joystickBaseY, thumbRadius);
 
-        zone.on('pointerout', () => {
-            this[direction] = false;
-        });
+        // Set analog + digital state
+        this.analogX = Math.abs(normalized);
 
-        this.uiElements.push(zone);
+        if (normalized < -0.15) {
+            this.left = true;
+            this.right = false;
+        } else if (normalized > 0.15) {
+            this.right = true;
+            this.left = false;
+        } else {
+            this.left = false;
+            this.right = false;
+            this.analogX = 0;
+        }
+    }
+
+    releaseJoystick() {
+        this.joystickActive = false;
+        this.joystickPointerId = null;
+        this.left = false;
+        this.right = false;
+        this.analogX = 0;
+
+        // Reset thumb to center
+        const thumbRadius = this.joystickRadius * 0.45;
+        this.drawJoystickThumb(this.joystickBaseX, this.joystickBaseY, thumbRadius);
     }
 
     createActionButton(x, y, texture, action, size) {
@@ -166,6 +257,7 @@ class TouchControls {
 
         btn.on('pointerdown', () => {
             btn.setAlpha(1);
+            btn.setScale(btn.scaleX * 1.1, btn.scaleY * 1.1);
 
             if (action === 'jump') {
                 const now = Date.now();
@@ -186,6 +278,7 @@ class TouchControls {
 
         btn.on('pointerup', () => {
             btn.setAlpha(this.opacity);
+            btn.setDisplaySize(size, size);
 
             if (action === 'jump') {
                 this.jump = false;
@@ -203,6 +296,7 @@ class TouchControls {
 
         btn.on('pointerout', () => {
             btn.setAlpha(this.opacity);
+            btn.setDisplaySize(size, size);
         });
 
         this.buttons.push(btn);
@@ -231,18 +325,31 @@ class TouchControls {
         if (!this.enabled) return;
 
         if (this.keys) {
-            // Keyboard overrides (desktop)
-            if (this.keys.left.isDown || this.keys.a_left.isDown) this.left = true;
-            else if (!this.isTouchDevice) this.left = false;
+            // Keyboard overrides (desktop) — always full speed
+            if (this.keys.left.isDown || this.keys.a_left.isDown) {
+                this.left = true;
+                this.analogX = 1;
+            } else if (!this.isTouchDevice) {
+                this.left = false;
+            }
 
-            if (this.keys.right.isDown || this.keys.d_right.isDown) this.right = true;
-            else if (!this.isTouchDevice) this.right = false;
+            if (this.keys.right.isDown || this.keys.d_right.isDown) {
+                this.right = true;
+                this.analogX = 1;
+            } else if (!this.isTouchDevice) {
+                this.right = false;
+            }
 
             if (this.keys.up.isDown || this.keys.w_up.isDown) this.up = true;
             else if (!this.isTouchDevice) this.up = false;
 
             if (this.keys.down.isDown || this.keys.s_down.isDown) this.down = true;
             else if (!this.isTouchDevice) this.down = false;
+
+            // Reset analogX when keyboard not pressed and not using touch
+            if (!this.isTouchDevice && !this.left && !this.right) {
+                this.analogX = 0;
+            }
 
             if (Phaser.Input.Keyboard.JustDown(this.keys.jump) || Phaser.Input.Keyboard.JustDown(this.keys.space)) {
                 this.jump = true;
@@ -285,11 +392,6 @@ class TouchControls {
         this.uiElements.forEach(el => {
             if (el.setAlpha) el.setAlpha(val);
         });
-    }
-
-    setScale(val) {
-        this.scale = val;
-        // Recreate controls with new scale
     }
 
     destroy() {

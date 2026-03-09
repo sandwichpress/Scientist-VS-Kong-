@@ -184,7 +184,10 @@ class Player {
     }
 
     handleNormalMovement(controls, delta) {
-        const speed = controls.sprint ? this.sprintSpeed : this.speed;
+        const baseSpeed = controls.sprint ? this.sprintSpeed : this.speed;
+        // Use analog joystick value for variable speed (0 to 1), default to full speed
+        const analog = (controls.analogX !== undefined && controls.analogX > 0) ? controls.analogX : 1;
+        const speed = baseSpeed * analog;
         this.isSprinting = controls.sprint && (controls.left || controls.right);
 
         // Horizontal
