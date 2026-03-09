@@ -562,6 +562,17 @@ class SpriteGenerator {
             draw(3, 5, C.red);
         });
 
+        // Heart empty
+        this.makeTexture('ui_heart_empty', 16, 16, (ctx) => {
+            const draw = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(x * 2, y * 2, 2, 2); };
+            draw(1, 1, C.darkGrey); draw(2, 1, C.darkGrey);
+            draw(4, 1, C.darkGrey); draw(5, 1, C.darkGrey);
+            for (let x = 1; x <= 5; x++) draw(x, 2, C.darkGrey);
+            for (let x = 1; x <= 5; x++) draw(x, 3, C.darkGrey);
+            for (let x = 2; x <= 4; x++) draw(x, 4, C.darkGrey);
+            draw(3, 5, C.darkGrey);
+        });
+
         // Vinyl icon
         this.makeTexture('ui_vinyl', 12, 12, (ctx) => {
             ctx.fillStyle = C.gold;
@@ -576,6 +587,174 @@ class SpriteGenerator {
             ctx.beginPath();
             ctx.arc(6, 6, 1, 0, Math.PI * 2);
             ctx.fill();
+        });
+
+        // Touch Control Sprites
+        this.generateControls();
+    }
+
+    generateControls() {
+        const C = this.colors;
+
+        // ========================
+        // D-PAD (120x120) - Cross shape with clear arrows
+        // ========================
+        this.makeTexture('ui_dpad', 120, 120, (ctx) => {
+            const s = 120;
+            const third = s / 3; // 40px per zone
+
+            // Background cross shape
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            // Vertical bar
+            ctx.fillRect(third, 0, third, s);
+            // Horizontal bar
+            ctx.fillRect(0, third, s, third);
+            // Round the cross appearance
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, s / 2 - 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Center dot
+            ctx.fillStyle = C.darkGrey;
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Arrow styling
+            ctx.fillStyle = C.gold;
+
+            // UP arrow ▲
+            ctx.beginPath();
+            ctx.moveTo(s / 2, 8);
+            ctx.lineTo(s / 2 + 12, 30);
+            ctx.lineTo(s / 2 - 12, 30);
+            ctx.closePath();
+            ctx.fill();
+
+            // DOWN arrow ▼
+            ctx.beginPath();
+            ctx.moveTo(s / 2, s - 8);
+            ctx.lineTo(s / 2 + 12, s - 30);
+            ctx.lineTo(s / 2 - 12, s - 30);
+            ctx.closePath();
+            ctx.fill();
+
+            // LEFT arrow ◀
+            ctx.beginPath();
+            ctx.moveTo(8, s / 2);
+            ctx.lineTo(30, s / 2 - 12);
+            ctx.lineTo(30, s / 2 + 12);
+            ctx.closePath();
+            ctx.fill();
+
+            // RIGHT arrow ▶
+            ctx.beginPath();
+            ctx.moveTo(s - 8, s / 2);
+            ctx.lineTo(s - 30, s / 2 - 12);
+            ctx.lineTo(s - 30, s / 2 + 12);
+            ctx.closePath();
+            ctx.fill();
+        });
+
+        // ========================
+        // JUMP BUTTON (A) - Green with UP arrow
+        // ========================
+        this.makeTexture('ui_btn_a', 56, 56, (ctx) => {
+            const s = 56;
+            // Circle background
+            ctx.fillStyle = 'rgba(34, 139, 34, 0.7)'; // green
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            // Border
+            ctx.strokeStyle = C.gold;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
+            ctx.stroke();
+            // UP arrow icon ▲
+            ctx.fillStyle = C.gold;
+            ctx.beginPath();
+            ctx.moveTo(s / 2, 10);
+            ctx.lineTo(s / 2 + 14, 34);
+            ctx.lineTo(s / 2 - 14, 34);
+            ctx.closePath();
+            ctx.fill();
+            // "JUMP" label
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('JUMP', s / 2, 46);
+        });
+
+        // ========================
+        // ATTACK BUTTON (B) - Orange with soundwave/vinyl icon
+        // ========================
+        this.makeTexture('ui_btn_b', 56, 56, (ctx) => {
+            const s = 56;
+            // Circle background
+            ctx.fillStyle = 'rgba(255, 140, 0, 0.7)'; // orange
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            // Border
+            ctx.strokeStyle = C.gold;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
+            ctx.stroke();
+            // Soundwave icon (3 arcs)
+            ctx.strokeStyle = C.gold;
+            ctx.lineWidth = 2;
+            for (let r = 6; r <= 14; r += 4) {
+                ctx.beginPath();
+                ctx.arc(s / 2 - 4, s / 2 - 4, r, -0.6, 0.6);
+                ctx.stroke();
+            }
+            // "DUB" label
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('DUB', s / 2, 46);
+        });
+
+        // ========================
+        // SPECIAL BUTTON (C) - Pink/teal with star icon
+        // ========================
+        this.makeTexture('ui_btn_c', 56, 56, (ctx) => {
+            const s = 56;
+            // Circle background
+            ctx.fillStyle = 'rgba(255, 105, 180, 0.7)'; // hot pink
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            // Border
+            ctx.strokeStyle = C.gold;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
+            ctx.stroke();
+            // Star icon
+            ctx.fillStyle = C.gold;
+            const cx = s / 2, cy = s / 2 - 4;
+            const spikes = 5, outerR = 12, innerR = 5;
+            ctx.beginPath();
+            for (let i = 0; i < spikes * 2; i++) {
+                const r = i % 2 === 0 ? outerR : innerR;
+                const angle = (i * Math.PI / spikes) - Math.PI / 2;
+                const px = cx + Math.cos(angle) * r;
+                const py = cy + Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            // "BASS" label
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('BASS', s / 2, 46);
         });
     }
 

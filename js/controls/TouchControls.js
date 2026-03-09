@@ -64,9 +64,11 @@ class TouchControls {
     }
 
     createTouchControls(width, height) {
-        const padding = 20;
-        const dpadSize = 120 * this.scale;
-        const btnSize = 56 * this.scale;
+        const isLandscape = width > height;
+        const padding = isLandscape ? 15 : 20;
+        const scaleFactor = isLandscape ? Math.min(1, height / 400) : this.scale;
+        const dpadSize = Math.round(120 * scaleFactor);
+        const btnSize = Math.round(60 * scaleFactor);
 
         // D-pad position (bottom-left)
         const dpadX = padding + dpadSize / 2;
@@ -94,16 +96,17 @@ class TouchControls {
         // Right zone
         this.createDPadZone(dpadX + zoneSize, dpadY, zoneSize, zoneSize, 'right');
 
-        // Action buttons (bottom-right) - stacked in arc like classic arcade
-        const btnBaseX = width - padding - btnSize;
-        const btnBaseY = height - padding - btnSize;
+        // Action buttons (bottom-right) - Diamond layout: Jump at bottom, Attack left, Special top
+        const btnBaseX = width - padding - btnSize / 2;
+        const btnBaseY = height - padding - btnSize / 2;
+        const btnSpacing = btnSize + 8;
 
-        // Jump (A) - bottom
+        // Jump (A) - bottom-right (primary, most accessible)
         this.createActionButton(btnBaseX, btnBaseY, 'ui_btn_a', 'jump', btnSize);
-        // Attack (B) - left of jump
-        this.createActionButton(btnBaseX - btnSize - 10, btnBaseY - 10, 'ui_btn_b', 'attack', btnSize);
-        // Special (C) - above jump
-        this.createActionButton(btnBaseX, btnBaseY - btnSize - 15, 'ui_btn_c', 'special', btnSize);
+        // Attack/Dub (B) - left of jump
+        this.createActionButton(btnBaseX - btnSpacing, btnBaseY, 'ui_btn_b', 'attack', btnSize);
+        // Special/Bass (C) - above jump
+        this.createActionButton(btnBaseX, btnBaseY - btnSpacing, 'ui_btn_c', 'special', btnSize);
 
         // Swipe detection on the whole screen
         this.scene.input.on('pointerdown', (pointer) => {
