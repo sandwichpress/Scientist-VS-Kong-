@@ -394,6 +394,32 @@ class TouchControls {
         });
     }
 
+    rebuild(width, height) {
+        // Destroy existing touch controls
+        this.uiElements.forEach(el => {
+            if (el.destroy) el.destroy();
+        });
+        this.uiElements = [];
+        this.buttons = [];
+        this.joystickBase = null;
+        this.joystickThumb = null;
+        this.joystickActive = false;
+        this.joystickPointerId = null;
+        this.left = false;
+        this.right = false;
+        this.analogX = 0;
+
+        // Remove old pointer listeners
+        this.scene.input.removeAllListeners('pointermove');
+        this.scene.input.removeAllListeners('pointerup');
+        this.scene.input.removeAllListeners('pointerdown');
+
+        // Recreate for new dimensions
+        if (this.isTouchDevice) {
+            this.createTouchControls(width, height);
+        }
+    }
+
     destroy() {
         this.uiElements.forEach(el => {
             if (el.destroy) el.destroy();

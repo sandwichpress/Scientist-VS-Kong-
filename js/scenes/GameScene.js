@@ -177,6 +177,13 @@ class GameScene extends Phaser.Scene {
         this.hud = new HUD(this);
         this.hud.create(levelData.name);
 
+        // Handle screen resize / orientation change
+        this.scale.on('resize', (gameSize) => {
+            if (this.controls) {
+                this.controls.rebuild(gameSize.width, gameSize.height);
+            }
+        });
+
         // Pause
         this.pauseMenu = new PauseMenu(this);
 
