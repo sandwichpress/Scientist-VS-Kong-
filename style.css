@@ -17,27 +17,36 @@ body {
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    /* No padding — game fills entire viewport including safe areas */
     padding: 0;
     margin: 0;
     position: fixed;
     top: 0;
     left: 0;
+    /* Use dvh/dvw which properly exclude address bar on mobile */
+    width: 100dvw;
+    height: 100dvh;
 }
 
 #game-container {
-    width: 100vw;
-    height: 100vh;
     position: fixed;
     top: 0;
     left: 0;
+    /* Fallback for older browsers */
+    width: 100vw;
+    height: 100vh;
+    /* Modern browsers: dynamic viewport (excludes address bar) */
+    width: 100dvw;
+    height: 100dvh;
     overflow: hidden;
 }
 
 #game-container canvas {
     display: block;
-    width: 100vw !important;
-    height: 100vh !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     image-rendering: -moz-crisp-edges;

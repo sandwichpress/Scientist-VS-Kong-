@@ -90,6 +90,23 @@
     }
     requestWakeLock();
 
+    // Reliable resize for mobile — use visualViewport API when available
+    function handleViewportResize() {
+        const vv = window.visualViewport;
+        const w = vv ? vv.width : window.innerWidth;
+        const h = vv ? vv.height : window.innerHeight;
+        game.scale.resize(w, h);
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleViewportResize);
+    }
+    window.addEventListener('orientationchange', () => {
+        // Delay to let browser settle after rotation
+        setTimeout(handleViewportResize, 300);
+        setTimeout(handleViewportResize, 600);
+    });
+
     // Visibility change
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {

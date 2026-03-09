@@ -177,11 +177,23 @@ class GameScene extends Phaser.Scene {
         this.hud = new HUD(this);
         this.hud.create(levelData.name);
 
-        // Handle screen resize / orientation change
+        // Handle screen resize / orientation change (debounced)
+        this._resizeTimer = null;
         this.scale.on('resize', (gameSize) => {
-            if (this.controls) {
-                this.controls.rebuild(gameSize.width, gameSize.height);
-            }
+            clearTimeout(this._resizeTimer);
+            this._resizeTimer = setTimeout(() => {
+                const w = gameSize.width;
+                const h = gameSize.height;
+                // Rebuild controls for new dimensions
+                if (this.controls) {
+                    this.controls.rebuild(w, h);
+                }
+                // Redraw background gradient
+                if (this.bgGraphics) {
+                    const maxDim = Math.max(w, h, 1024);
+                    this.drawBgGradient(maxDim, maxDim);
+                }
+            }, 200);
         });
 
         // Pause
@@ -214,13 +226,6 @@ class GameScene extends Phaser.Scene {
         this.bgGraphics = this.add.graphics().setDepth(0).setScrollFactor(0);
         this.drawBgGradient(maxDim, maxDim);
 
-        // Rebuild gradient on resize (orientation change)
-        this.scale.on('resize', (gameSize) => {
-            if (this.bgGraphics) {
-                const newMax = Math.max(gameSize.width, gameSize.height, 1024);
-                this.drawBgGradient(newMax, newMax);
-            }
-        });
 
         // Decorations based on world
         const worldNum = this.bgWorldNum;

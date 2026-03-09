@@ -73,15 +73,15 @@ class TouchControls {
     createTouchControls(width, height) {
         const isLandscape = width > height;
 
-        // Joystick sizing
-        const joyRadius = isLandscape ? Math.round(height * 0.16) : 50;
+        // Joystick sizing — cap to prevent overflow on small screens
+        const joyRadius = isLandscape ? Math.round(Math.min(height * 0.14, 60)) : 50;
         const joyBaseSize = joyRadius * 2.4;
         const joyThumbSize = joyRadius * 0.9;
         this.joystickRadius = joyRadius;
 
-        // Button sizing - MUCH bigger in landscape
-        const btnSize = isLandscape ? Math.round(height * 0.22) : 60;
-        const padding = isLandscape ? 20 : 20;
+        // Button sizing - bigger in landscape but capped
+        const btnSize = isLandscape ? Math.round(Math.min(height * 0.20, 80)) : 60;
+        const padding = isLandscape ? 30 : 20;
 
         // ========================
         // VIRTUAL JOYSTICK (left side)
