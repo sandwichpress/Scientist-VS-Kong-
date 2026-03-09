@@ -204,18 +204,48 @@ class GameScene extends Phaser.Scene {
 
     createParallaxBg(worldW, worldH, levelData) {
         // Poster-style gradient background
+        // Use max dimension to ensure coverage in both orientations
         const { width, height } = this.scale;
-        const bg = this.add.graphics().setDepth(0).setScrollFactor(0);
+        const maxDim = Math.max(width, height, 1024); // at least 1024 for large screens
 
-        // Determine world colors
-        const worldNum = Math.ceil(this.currentLevel / 5);
+        // Store world number for rebuilds
+        this.bgWorldNum = Math.ceil(this.currentLevel / 5);
+
+        this.bgGraphics = this.add.graphics().setDepth(0).setScrollFactor(0);
+        this.drawBgGradient(maxDim, maxDim);
+
+        // Rebuild gradient on resize (orientation change)
+        this.scale.on('resize', (gameSize) => {
+            if (this.bgGraphics) {
+                const newMax = Math.max(gameSize.width, gameSize.height, 1024);
+                this.drawBgGradient(newMax, newMax);
+            }
+        });
+
+        // Decorations based on world
+        const worldNum = this.bgWorldNum;
+        if (worldNum === 1 || worldNum === 3) {
+            // Palm trees parallax
+            if (this.textures.exists('deco_palm')) {
+                for (let i = 0; i < 3; i++) {
+                    const palm = this.add.image(
+                        100 + i * 200, worldH - 60, 'deco_palm'
+                    ).setDepth(1).setAlpha(0.3).setScrollFactor(0.3, 1);
+                }
+            }
+        }
+    }
+
+    drawBgGradient(bgW, bgH) {
         const palettes = {
             1: [0xFF69B4, 0xFF8C00, 0xFFD700, 0x4169E1], // coast
             2: [0xFF8C00, 0x444444, 0x222222, 0x111111], // city
             3: [0x228B22, 0x006400, 0x008080, 0x4169E1], // island
             4: [0x444444, 0xCC0000, 0x222222, 0x000000], // factory
         };
-        const colors = palettes[worldNum] || palettes[1];
+        const colors = palettes[this.bgWorldNum] || palettes[1];
+
+        this.bgGraphics.clear();
 
         const steps = 20;
         for (let i = 0; i < steps; i++) {
@@ -226,20 +256,8 @@ class GameScene extends Phaser.Scene {
             const c2 = Phaser.Display.Color.IntegerToColor(colors[ci + 1]);
             const interp = Phaser.Display.Color.Interpolate.ColorWithColor(c1, c2, 100, Math.floor(lt * 100));
             const c = Phaser.Display.Color.GetColor(interp.r, interp.g, interp.b);
-            bg.fillStyle(c);
-            bg.fillRect(0, (i / steps) * height, width, height / steps + 1);
-        }
-
-        // Decorations based on world
-        if (worldNum === 1 || worldNum === 3) {
-            // Palm trees parallax
-            if (this.textures.exists('deco_palm')) {
-                for (let i = 0; i < 3; i++) {
-                    const palm = this.add.image(
-                        100 + i * 200, worldH - 60, 'deco_palm'
-                    ).setDepth(1).setAlpha(0.3).setScrollFactor(0.3, 1);
-                }
-            }
+            this.bgGraphics.fillStyle(c);
+            this.bgGraphics.fillRect(0, (i / steps) * bgH, bgW, bgH / steps + 2);
         }
     }
 
